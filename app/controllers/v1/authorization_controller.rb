@@ -1,20 +1,36 @@
+# frozen_string_literal: true
+
+require 'httparty'
+require 'json'
+
 module V1
-  class OmniauthCallbacksController < Devise::OmniauthCallbacksController
-    # See https://github.com/omniauth/omniauth/wiki/FAQ#rails-session-is-clobbered-after-callback-on-developer-strategy
-    # skip_before_action :verify_authenticity_token, only: :google
+  class AuthorizationController < ApplicationController
+    include HTTParty
 
-    def google_oauth2
-      @user = User.from_omniauth(params[:auth])
-    end
+    def get_authorization
+      url = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=#{params['access_token']}"
+      response = HTTParty.get(url)
 
-    def failure
-      render json: {}, status: :unprocessable_entity
+      pp response.parsed_response
+
+      @user = User.create_user_for_google(response.parsed_response)
+      tokens = @user.create_new_auth_token
+      @user.save
+      set_headers(tokens)
+      render json: { status: 'Signed in successfully.' }, status: :created
     end
 
     private
 
-    def omniauth_params
-      params.permit(:auth)
+    def set_headers(tokens)
+      headers['id'] = @user.id
+      headers['email'] = @user.email
+      headers['access-token'] = (tokens['access-token']).to_s
+      headers['role'] = @user.role
+    end
+
+    def authorization_params
+      params.permit(:access_token)
     end
   end
 end
