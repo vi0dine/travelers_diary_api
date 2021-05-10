@@ -7,5 +7,9 @@ FactoryBot.define do
     role { :user }
     encrypted_password { Faker::Internet.password }
     provider { 'google_oauth2' }
+
+    trait :admin do
+      role { :admin }
+    end
   end
 end
