@@ -4,7 +4,7 @@ FactoryBot.define do
   factory :note do
     city { Faker::Address.city }
     title { Faker::Lorem.question }
-    content { Faker::Lorem.paragraphs(number: 3) }
+    content { Faker::Quote.fortune_cookie }
     user
   end
 end

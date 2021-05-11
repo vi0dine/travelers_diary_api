@@ -15,4 +15,6 @@ RSpec.describe User, type: :model do
   it { should validate_uniqueness_of(:uid).case_insensitive }
 
   it { should define_enum_for(:role).with_values(%i[user admin]) }
+
+  it { should have_many(:notes) }
 end

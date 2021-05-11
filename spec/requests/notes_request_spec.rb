@@ -17,6 +17,7 @@ RSpec.describe 'Notes', type: :request do
         expect(json['notes']).to all(have_key('city'))
         expect(json['notes']).to all(have_key('content'))
         expect(json['notes']).to all(have_key('created_at'))
+        expect(json['notes']).to all(have_key('weather'))
         expect(json['notes'].count).to be <= Kaminari.config.default_per_page
       end
 
@@ -45,6 +46,7 @@ RSpec.describe 'Notes', type: :request do
         expect(json['notes']).to all(have_key('city'))
         expect(json['notes']).to all(have_key('content'))
         expect(json['notes']).to all(have_key('created_at'))
+        expect(json['notes']).to all(have_key('weather'))
         expect(json['notes'].count).to be <= Kaminari.config.default_per_page
       end
 
@@ -134,6 +136,253 @@ RSpec.describe 'Notes', type: :request do
 
       it 'returns status code 401' do
         expect(response).to have_http_status(401)
+      end
+    end
+  end
+  describe 'POST /notes' do
+    context 'when the user (:user) is logged in' do
+      let(:user) { create(:user, :user) }
+      let(:note_attributes) { attributes_for(:note) }
+      before do
+        post '/notes',
+             params: { note: {
+               **note_attributes
+             } },
+             headers: auth_as(user)
+      end
+
+      it 'return note data' do
+        expect(json['note']).to have_key('id')
+        expect(json['note']).to have_key('title')
+        expect(json['note']).to have_key('city')
+        expect(json['note']).to have_key('content')
+        expect(json['note']).to have_key('created_at')
+        expect(json['note']).to have_key('weather')
+      end
+
+      it 'returns status code 201' do
+        expect(response).to have_http_status(201)
+      end
+    end
+
+    context 'when the user (:admin) is logged in' do
+      let(:admin) { create(:user, :admin) }
+      let(:note_attributes) { attributes_for(:note) }
+      before do
+        post '/notes',
+             params: { note: {
+               **note_attributes
+             } },
+             headers: auth_as(admin)
+      end
+
+      it 'return note data' do
+        expect(json['note']).to have_key('id')
+        expect(json['note']).to have_key('title')
+        expect(json['note']).to have_key('city')
+        expect(json['note']).to have_key('content')
+        expect(json['note']).to have_key('created_at')
+        expect(json['note']).to have_key('weather')
+      end
+
+      it 'returns status code 201' do
+        expect(response).to have_http_status(201)
+      end
+    end
+
+    context 'when the user is a quest' do
+      let(:note_attributes) { attributes_for(:note) }
+      before do
+        post '/notes',
+             params: { note: {
+               **note_attributes
+             } }
+      end
+
+      it 'returns status code 401' do
+        expect(response).to have_http_status(401)
+      end
+
+      it 'does not create a note' do
+        expect do
+          post '/notes',
+               params: { note: {
+                 **note_attributes
+               } }
+        end.to change { Note.count }.by(0)
+      end
+
+      it 'returns status code 401' do
+        expect(response).to have_http_status(401)
+      end
+    end
+  end
+
+  describe 'PATCH /notes/:id' do
+    context 'when the user (:user) is logged in' do
+      context 'and accessing self note' do
+        let(:user) { create(:user, :user) }
+        let(:note) { create(:note, user: user) }
+        let(:note_attributes) { attributes_for(:note) }
+        before do
+          patch "/notes/#{note.id}",
+                params: { note: {
+                  **note_attributes
+                } },
+                headers: auth_as(user)
+        end
+
+        it 'return note data' do
+          expect(json['note']).to have_key('id')
+          expect(json['note']).to have_key('title')
+          expect(json['note']).to have_key('city')
+          expect(json['note']).to have_key('content')
+          expect(json['note']).to have_key('created_at')
+          expect(json['note']).to have_key('weather')
+        end
+
+        it 'returns status code 200' do
+          expect(response).to have_http_status(200)
+        end
+      end
+
+      context 'and accessing other user note' do
+        let(:user) { create(:user) }
+        let(:note) { create(:note) }
+        let(:note_attributes) { attributes_for(:note) }
+        before do
+          patch "/notes/#{note.id}",
+                params: { note: {
+                  **note_attributes
+                } },
+                headers: auth_as(user)
+        end
+
+        it 'return error message' do
+          expect(json['message']).to eq('Not allowed to update? this note')
+        end
+
+        it 'returns status code 403' do
+          expect(response).to have_http_status(403)
+        end
+      end
+    end
+
+    context 'when the user (:admin) is logged in' do
+      let(:admin) { create(:user, :admin) }
+      let(:note) { create(:note) }
+      let(:note_attributes) { attributes_for(:note) }
+      before do
+        patch "/notes/#{note.id}",
+              params: { note: {
+                **note_attributes
+              } },
+              headers: auth_as(admin)
+      end
+
+      it 'return note data' do
+        expect(json['note']).to have_key('id')
+        expect(json['note']).to have_key('title')
+        expect(json['note']).to have_key('city')
+        expect(json['note']).to have_key('content')
+        expect(json['note']).to have_key('created_at')
+        expect(json['note']).to have_key('weather')
+      end
+
+      it 'returns status code 200' do
+        expect(response).to have_http_status(200)
+      end
+    end
+
+    context 'when the user is a quest' do
+      let(:note) { create(:note) }
+      let(:note_attributes) { attributes_for(:note) }
+      before do
+        patch "/notes/#{note.id}",
+              params: { note: { **note_attributes } }
+      end
+
+      it 'returns status code 401' do
+        expect(response).to have_http_status(401)
+      end
+    end
+  end
+
+  describe 'DELETE /notes/:id' do
+    context 'when the user (:user) is logged in' do
+      context 'when trying to delete selfs note' do
+        let(:user) { create(:user) }
+        let(:notes) { create_list(:note, 3, user: user) }
+        before { delete "/notes/#{notes.last.id}", headers: auth_as(user) }
+
+        it 'returns the deleted note id' do
+          expect(json['note']).to have_key('id')
+        end
+
+        it 'deletes note' do
+          expect do
+            delete "/notes/#{notes.first.id}", headers: auth_as(user)
+          end.to change { Note.count }.by(-1)
+        end
+
+        it 'returns status code 200' do
+          expect(response).to have_http_status(200)
+        end
+      end
+
+      context 'when trying to delete sb note' do
+        let(:note) { create(:note) }
+        let(:user) { create(:user) }
+        before { delete "/notes/#{note.id}", headers: auth_as(user) }
+
+        it 'returns the error message' do
+          expect(json['message']).to eq('Not allowed to destroy? this note')
+        end
+
+        it 'does not delete note' do
+          expect do
+            delete "/notes/#{note.id}", headers: auth_as(user)
+          end.to change { Note.count }.by(0)
+        end
+
+        it 'returns status code 403' do
+          expect(response).to have_http_status(403)
+        end
+      end
+    end
+
+    context 'when the user (:admin) is logged in' do
+      let(:notes) { create_list(:note, 5) }
+      let(:admin) { create(:user, :admin) }
+      before { delete "/notes/#{notes.last.id}", headers: auth_as(admin) }
+
+      it 'return the deleted note id' do
+        expect(json['note']).to have_key('id')
+      end
+
+      it 'returns status code 200' do
+        expect(response).to have_http_status(200)
+      end
+
+      it 'deletes note' do
+        expect do
+          delete "/notes/#{notes.first.id}", headers: auth_as(admin)
+        end.to change { Note.count }.by(-1)
+      end
+    end
+
+    context 'when the user is a quest' do
+      let(:note) { create(:note) }
+      before { delete "/notes/#{note.id}" }
+
+      it 'returns status code 401' do
+        expect(response).to have_http_status(401)
+      end
+
+      it 'does not delete note' do
+        expect do
+          delete "/notes/#{note.id}"
+        end.to change { Note.count }.by(0)
       end
     end
   end

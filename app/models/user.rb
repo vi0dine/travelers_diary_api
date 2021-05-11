@@ -24,6 +24,8 @@ class User < ApplicationRecord
 
   validates_inclusion_of :role, in: %w[user admin]
 
+  has_many :notes
+
   def self.create_user_for_google(data)
     where(email: data['email']).first_or_initialize.tap do |user|
       user.email = data['email']

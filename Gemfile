@@ -19,6 +19,7 @@ gem 'puma', '~> 5.0'
 gem 'pundit'
 gem 'rack-cors'
 gem 'rails', '~> 6.1.3', '>= 6.1.3.1'
+gem 'webmock'
 
 group :development, :test do
   gem 'byebug', platforms: %i[mri mingw x64_mingw]

@@ -12,7 +12,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20_210_510_102_956) do
+ActiveRecord::Schema.define(version: 20_210_511_113_208) do
   # These are extensions that must be enabled in order to support this database
   enable_extension 'plpgsql'
 
@@ -47,5 +47,19 @@ ActiveRecord::Schema.define(version: 20_210_510_102_956) do
     t.index ['email'], name: 'index_users_on_email', unique: true
     t.index ['reset_password_token'], name: 'index_users_on_reset_password_token', unique: true
     t.index %w[uid provider], name: 'index_users_on_uid_and_provider', unique: true
+  end
+
+  create_table 'weather_readings', force: :cascade do |t|
+    t.string 'weather'
+    t.string 'description'
+    t.integer 'temperature'
+    t.integer 'pressure'
+    t.integer 'humidity'
+    t.integer 'clouds'
+    t.integer 'wind_speed'
+    t.bigint 'note_id'
+    t.datetime 'created_at', precision: 6, null: false
+    t.datetime 'updated_at', precision: 6, null: false
+    t.index ['note_id'], name: 'index_weather_readings_on_note_id'
   end
 end
